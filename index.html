@@ -72,6 +72,15 @@
       </section>
     </main>
 
-    <script src="script.js"></script>
+    <script>
+      window.module = undefined;
+      window.exports = undefined;
+      window.define = undefined;
+    </script>
+    <script src="compromise.min.js?v=browser-global"></script>
+    <script>
+      document.documentElement.dataset.nlpLoaded = typeof window.nlp;
+    </script>
+    <script src="script.js?v=nlp-analyzer-2"></script>
   </body>
 </html>

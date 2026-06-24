@@ -427,7 +427,7 @@ function countsMatchTargets() {
 }
 
 function analyzeExercise(sourceWords) {
-  const guessedCategories = sourceWords.map((word, index) => guessCategory(word, index, sourceWords));
+  const guessedCategories = classifyWords(sourceWords);
   const targets = categories.reduce((result, category) => {
     result[category.id] = 0;
     return result;
@@ -443,44 +443,113 @@ function analyzeExercise(sourceWords) {
   return targets;
 }
 
-function guessCategory(word, index, sourceWords) {
-  const text = word.cleanText.toLowerCase();
-  const previousText = sourceWords[index - 1]?.cleanText.toLowerCase() || "";
-  const nextText = sourceWords[index + 1]?.cleanText.toLowerCase() || "";
+function classifyWords(sourceWords) {
+  const classifiableWords = sourceWords.filter((word) => word.cleanText);
+  const text = classifiableWords.map((word) => word.cleanText).join(" ");
+  const terms = getNlpTerms(text);
+  let termIndex = 0;
 
-  if (!text) {
-    return null;
+  const guessedCategories = sourceWords.map((word) => {
+    if (!word.cleanText) {
+      return null;
+    }
+
+    const term = terms[termIndex];
+    termIndex += 1;
+    return categoryFromTags(term?.tags || []);
+  });
+
+  return refineAmbiguousCategories(sourceWords, terms, guessedCategories);
+}
+
+function getNlpTerms(text) {
+  if (typeof nlp !== "function") {
+    return [];
   }
 
-  if (articles.has(text)) {
+  return nlp(text)
+    .json()
+    .flatMap((sentence) => sentence.terms || []);
+}
+
+function categoryFromTags(tags) {
+  const tagSet = new Set(tags);
+
+  if (tagSet.has("Determiner") || tagSet.has("Article")) {
     return "article";
   }
 
-  if (prepositions.has(text)) {
+  if (tagSet.has("Preposition")) {
     return "preposition";
   }
 
-  if (adverbs.has(text) || text.endsWith("ly")) {
+  if (tagSet.has("Adverb")) {
     return "adverb";
   }
 
-  if (verbs.has(text) || auxiliaryVerbs.has(text)) {
+  if (tagSet.has("Verb") || tagSet.has("Copula") || tagSet.has("Auxiliary")) {
     return "verb";
   }
 
-  if (adjectives.has(text) || adjectiveEndings.some((ending) => text.endsWith(ending))) {
+  if (tagSet.has("Adjective")) {
     return "adjective";
   }
 
-  if ((previousText && articles.has(previousText)) || (nextText && nouns.has(nextText))) {
-    return nouns.has(text) ? "noun" : "adjective";
-  }
-
-  if (nouns.has(text) || index > 0) {
+  if (tagSet.has("Noun") || tagSet.has("Person") || tagSet.has("Place") || tagSet.has("Organization")) {
     return "noun";
   }
 
-  return "noun";
+  return null;
+}
+
+function refineAmbiguousCategories(sourceWords, terms, guessedCategories) {
+  const refinedCategories = [...guessedCategories];
+  const termByWordId = new Map();
+  let termIndex = 0;
+
+  sourceWords.forEach((word) => {
+    if (!word.cleanText) {
+      return;
+    }
+
+    termByWordId.set(word.id, terms[termIndex] || {});
+    termIndex += 1;
+  });
+
+  sourceWords.forEach((word, index) => {
+    const term = termByWordId.get(word.id) || {};
+    const nextWord = sourceWords[index + 1];
+    const nextTerm = nextWord ? termByWordId.get(nextWord.id) || {} : {};
+    const nextCategory = refinedCategories[index + 1];
+
+    if (refinedCategories[index] === "noun" && hasSwitch(term, "Adj|Noun") && isPluralNounCandidate(nextTerm, nextCategory)) {
+      refinedCategories[index] = "adjective";
+    }
+
+    if (refinedCategories[index] === "verb" && isPluralNounCandidate(term, refinedCategories[index])) {
+      const previousCategory = refinedCategories[index - 1];
+      const previousWord = sourceWords[index - 1];
+      const previousTerm = previousWord ? termByWordId.get(previousWord.id) || {} : {};
+      const followsNominalModifier =
+        previousCategory === "article" ||
+        previousCategory === "adjective" ||
+        (previousCategory === "noun" && hasSwitch(previousTerm, "Adj|Noun"));
+
+      if (followsNominalModifier) {
+        refinedCategories[index] = "noun";
+      }
+    }
+  });
+
+  return refinedCategories;
+}
+
+function hasSwitch(term, value) {
+  return typeof term.switch === "string" && term.switch.includes(value);
+}
+
+function isPluralNounCandidate(term, category) {
+  return category === "verb" && hasSwitch(term, "Plural|Verb");
 }
 
 function findNounPhraseRanges(sourceWords, guessedCategories) {
@@ -598,41 +667,6 @@ function undoLastAction() {
 function updateUndoButton() {
   undoButton.disabled = historyStack.length === 0;
 }
-
-const articles = new Set(["a", "an", "the"]);
-const prepositions = new Set([
-  "about", "above", "across", "after", "against", "along", "among", "around", "at",
-  "before", "behind", "below", "beneath", "beside", "between", "by", "during", "for",
-  "from", "in", "inside", "into", "near", "of", "on", "onto", "over", "through", "to",
-  "under", "until", "up", "with", "within", "without"
-]);
-const auxiliaryVerbs = new Set([
-  "am", "are", "is", "was", "were", "be", "been", "being", "do", "does", "did",
-  "have", "has", "had", "can", "could", "will", "would", "shall", "should", "may",
-  "might", "must"
-]);
-const verbs = new Set([
-  "accept", "add", "analyze", "ask", "build", "buy", "call", "change", "check",
-  "choose", "clean", "close", "come", "create", "develop", "do", "drive", "eat",
-  "find", "fix", "get", "give", "go", "help", "learn", "make", "open", "play",
-  "read", "reads", "run", "say", "see", "select", "solve", "solves", "speak",
-  "start", "study", "take", "teach", "test", "tests", "try", "use", "uses", "walk",
-  "work", "works", "write"
-]);
-const adverbs = new Set([
-  "always", "carefully", "never", "often", "quickly", "quietly", "rarely", "slowly",
-  "sometimes", "usually", "well"
-]);
-const adjectives = new Set([
-  "beautiful", "big", "difficult", "easy", "experienced", "good", "great", "happy",
-  "important", "interesting", "modern", "new", "old", "small", "technical", "young"
-]);
-const nouns = new Set([
-  "application", "applications", "book", "class", "company", "developer", "exercise",
-  "language", "passion", "problem", "problems", "programmer", "project", "projects",
-  "school", "software", "student", "system", "team", "tool", "tools", "word", "words"
-]);
-const adjectiveEndings = ["able", "al", "ful", "ic", "ive", "less", "ous"];
 
 function showFeedback(message, type) {
   const feedback = document.querySelector("#feedback");
