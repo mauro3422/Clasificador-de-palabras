@@ -41,7 +41,7 @@ function renderSentence() {
   }
 
   words.forEach((word) => {
-    const wordButton = document.createElement("button");
+  const wordButton = document.createElement("button");
     wordButton.type = "button";
     wordButton.className = "word";
     wordButton.textContent = word.text;
@@ -227,7 +227,6 @@ function addSelection(id) {
     return;
   }
 
-  saveHistory();
   selectedIds.add(id);
   updateSelectedWords();
 }
@@ -295,6 +294,8 @@ function addNounPhrase() {
     });
   } else {
     showFeedback("Esa frase nominal ya estaba guardada.", "warning");
+    renderAll();
+    return;
   }
 
   selectedIds.clear();
@@ -668,6 +669,13 @@ function saveHistory() {
 }
 
 function undoLastAction() {
+  if (selectedIds.size > 0) {
+    selectedIds.clear();
+    showFeedback("Seleccion deshecha.", "warning");
+    renderAll();
+    return;
+  }
+
   const previousState = historyStack.pop();
 
   if (!previousState) {

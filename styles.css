@@ -185,7 +185,7 @@ textarea:focus {
 .word.selected {
   border-color: var(--accent);
   background: var(--accent-soft);
-  color: var(--accent-dark);
+  color: var(--text);
 }
 
 .word.tagged {
