@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clasificador de palabras en ingles</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace" aria-labelledby="page-title">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Practica editable</p>
+            <h1 id="page-title">Clasificador de palabras</h1>
+          </div>
+          <button class="ghost-button" id="resetButton" type="button">Reiniciar</button>
+        </div>
+
+        <section class="builder-panel" aria-labelledby="builder-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="builder-title">Tu oracion o parrafo</h2>
+              <p>Escribe el texto en ingles y crea un ejercicio para etiquetar palabras y frases nominales.</p>
+            </div>
+            <button class="primary-button" id="buildButton" type="button">Crear ejercicio</button>
+          </div>
+          <textarea id="sentenceInput" rows="4" spellcheck="false">The experienced programmer carefully tests modern applications in the company.</textarea>
+        </section>
+
+        <div class="exercise-panel">
+          <div class="instructions">
+            <h2>Texto para clasificar</h2>
+            <p>Selecciona una o varias palabras arrastrando sobre ellas. Para una frase nominal, marca el grupo completo.</p>
+          </div>
+
+          <p class="sentence" id="sentence" aria-label="Oracion para clasificar"></p>
+
+          <div class="selection-status" id="selectionStatus" aria-live="polite">
+            Selecciona palabras del parrafo.
+          </div>
+        </div>
+
+        <section class="category-panel" aria-labelledby="categories-title">
+          <h2 id="categories-title">Categorias</h2>
+          <div class="category-grid" id="categoryGrid"></div>
+        </section>
+
+        <section class="answers-panel" aria-labelledby="answers-title">
+          <div class="section-heading">
+            <h2 id="answers-title">Tus etiquetas</h2>
+            <button class="primary-button" id="checkButton" type="button">Revisar</button>
+          </div>
+          <div class="answers-grid" id="answersGrid"></div>
+          <div class="feedback" id="feedback" aria-live="polite"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
