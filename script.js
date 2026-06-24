@@ -19,6 +19,7 @@ const sentenceElement = document.querySelector("#sentence");
 const categoryGrid = document.querySelector("#categoryGrid");
 const goalGrid = document.querySelector("#goalGrid");
 const answersGrid = document.querySelector("#answersGrid");
+const reviewGrid = document.querySelector("#reviewGrid");
 const selectionStatus = document.querySelector("#selectionStatus");
 const checkButton = document.querySelector("#checkButton");
 const resetButton = document.querySelector("#resetButton");
@@ -28,6 +29,7 @@ const undoButton = document.querySelector("#undoButton");
 let selectedIds = new Set();
 let isDragging = false;
 let historyStack = [];
+let reviewResults = {};
 
 function renderSentence() {
   sentenceElement.innerHTML = "";
@@ -146,6 +148,7 @@ function renderAll() {
   renderSentence();
   renderAnswers();
   renderGoals();
+  renderReview();
   updateSelectedWords();
   updateUndoButton();
 }
@@ -159,6 +162,11 @@ function renderGoals() {
     const item = document.createElement("article");
     item.className = "goal-card";
     item.style.setProperty("--category-color", category.color);
+    const review = reviewResults[category.id];
+
+    if (review) {
+      item.classList.add(`review-${review.status}`);
+    }
 
     const title = document.createElement("h3");
     title.textContent = category.label;
@@ -173,6 +181,36 @@ function renderGoals() {
     }
 
     goalGrid.appendChild(item);
+  });
+}
+
+function renderReview() {
+  reviewGrid.innerHTML = "";
+
+  if (Object.keys(reviewResults).length === 0) {
+    return;
+  }
+
+  categories.forEach((category) => {
+    const review = reviewResults[category.id];
+
+    if (!review) {
+      return;
+    }
+
+    const card = document.createElement("article");
+    card.className = `review-card review-${review.status}`;
+    card.style.setProperty("--category-color", category.color);
+
+    const title = document.createElement("h3");
+    title.textContent = category.label;
+    card.appendChild(title);
+
+    const message = document.createElement("p");
+    message.textContent = review.message;
+    card.appendChild(message);
+
+    reviewGrid.appendChild(card);
   });
 }
 
@@ -267,6 +305,7 @@ function applyCategory(categoryId) {
 
   selectedIds.clear();
   showFeedback("", "");
+  reviewResults = {};
   renderAll();
 }
 
@@ -302,6 +341,7 @@ function addNounPhrase() {
   if (!alreadyExists) {
     showFeedback("", "");
   }
+  reviewResults = {};
   renderAll();
 }
 
@@ -316,6 +356,7 @@ function removeNounPhrase(phraseId) {
   nounPhrases = nounPhrases.filter((phrase) => phrase.id !== phraseId);
   selectedIds.clear();
   showFeedback("Frase nominal quitada.", "warning");
+  reviewResults = {};
   renderAll();
 }
 
@@ -329,6 +370,7 @@ function checkAnswers() {
       validation: validateNounPhrase(phrase),
     }))
     .filter((item) => !item.validation.valid);
+  reviewResults = buildReviewResults(invalidNounPhrases);
 
   if (classifiableWords.length === 0) {
     showFeedback("Primero crea un ejercicio con una oracion.", "warning");
@@ -338,7 +380,7 @@ function checkAnswers() {
     const messages = [];
 
     if (pendingWords.length > 0) {
-      messages.push(`Faltan etiquetar: ${pendingWords.map((word) => word.cleanText).join(", ")}`);
+      messages.push(`faltan etiquetar ${pendingWords.length} palabra${pendingWords.length === 1 ? "" : "s"}`);
     }
 
     if (missingNounPhrase) {
@@ -359,6 +401,9 @@ function checkAnswers() {
 
     showFeedback(`${messages.join("; ")}.`, "warning");
   }
+
+  renderGoals();
+  renderReview();
 }
 
 function resetExercise() {
@@ -369,6 +414,7 @@ function resetExercise() {
     word.category = null;
   });
   showFeedback("", "");
+  reviewResults = {};
   renderAll();
 }
 
@@ -386,6 +432,7 @@ function buildExercise() {
   selectedIds.clear();
   nounPhrases = [];
   historyStack = [];
+  reviewResults = {};
   showFeedback("Nuevo ejercicio creado.", "success");
   renderAll();
 }
@@ -425,6 +472,43 @@ function getCurrentCount(categoryId) {
 
 function countsMatchTargets() {
   return categories.every((category) => getCurrentCount(category.id) === (exerciseTargets[category.id] || 0));
+}
+
+function buildReviewResults(invalidNounPhrases) {
+  return categories.reduce((results, category) => {
+    const target = exerciseTargets[category.id] || 0;
+    const current = getCurrentCount(category.id);
+
+    if (category.id === "nounPhrase" && invalidNounPhrases.length > 0) {
+      results[category.id] = {
+        status: "error",
+        message: "Hay una frase nominal que rompe una regla. Revisa que sea continua y que no incluya verbo, adverbio ni preposicion.",
+      };
+      return results;
+    }
+
+    if (current === target) {
+      results[category.id] = {
+        status: "ok",
+        message: "Cantidad correcta.",
+      };
+      return results;
+    }
+
+    if (current < target) {
+      results[category.id] = {
+        status: "warning",
+        message: `Faltan ${target - current}.`,
+      };
+      return results;
+    }
+
+    results[category.id] = {
+      status: "error",
+      message: `Sobran ${current - target}.`,
+    };
+    return results;
+  }, {});
 }
 
 function analyzeExercise(sourceWords) {
@@ -672,6 +756,7 @@ function undoLastAction() {
   if (selectedIds.size > 0) {
     selectedIds.clear();
     showFeedback("Seleccion deshecha.", "warning");
+    reviewResults = {};
     renderAll();
     return;
   }
@@ -689,6 +774,7 @@ function undoLastAction() {
   }));
   selectedIds = new Set(previousState.selectedIds || []);
   showFeedback("Ultima accion deshecha.", "warning");
+  reviewResults = {};
   renderAll();
 }
 

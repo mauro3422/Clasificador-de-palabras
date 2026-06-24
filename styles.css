@@ -259,6 +259,14 @@ textarea:focus {
   background: rgba(74, 222, 128, 0.08);
 }
 
+.goal-card.review-warning {
+  border-color: rgba(251, 191, 36, 0.78);
+}
+
+.goal-card.review-error {
+  border-color: rgba(251, 113, 133, 0.82);
+}
+
 .category-button,
 .ghost-button,
 .primary-button {
@@ -332,6 +340,58 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.review-card {
+  min-height: 78px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.review-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+
+.review-card h3::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--category-color);
+  content: "";
+}
+
+.review-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.review-card.review-ok {
+  border-color: rgba(74, 222, 128, 0.62);
+  background: rgba(74, 222, 128, 0.07);
+}
+
+.review-card.review-warning {
+  border-color: rgba(251, 191, 36, 0.72);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.review-card.review-error {
+  border-color: rgba(251, 113, 133, 0.78);
+  background: rgba(251, 113, 133, 0.09);
 }
 
 .answer-card h3 {
