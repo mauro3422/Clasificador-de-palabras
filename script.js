@@ -23,9 +23,11 @@ const selectionStatus = document.querySelector("#selectionStatus");
 const checkButton = document.querySelector("#checkButton");
 const resetButton = document.querySelector("#resetButton");
 const buildButton = document.querySelector("#buildButton");
+const undoButton = document.querySelector("#undoButton");
 
 let selectedIds = new Set();
 let isDragging = false;
+let historyStack = [];
 
 function renderSentence() {
   sentenceElement.innerHTML = "";
@@ -141,6 +143,14 @@ function renderAnswers() {
   });
 }
 
+function renderAll() {
+  renderSentence();
+  renderAnswers();
+  renderGoals();
+  updateSelectedWords();
+  updateUndoButton();
+}
+
 function renderGoals() {
   goalGrid.innerHTML = "";
 
@@ -179,19 +189,22 @@ function renderPhraseList(card) {
   list.className = "tag-list";
 
   nounPhrases.forEach((phrase) => {
-    const pill = document.createElement("button");
-    pill.type = "button";
+    const pill = document.createElement("span");
     const validation = validateNounPhrase(phrase);
     pill.className = validation.valid ? "tag-pill removable" : "tag-pill removable invalid";
-    pill.textContent = phrase.text;
-    pill.title = validation.valid ? "Quitar frase nominal" : `${validation.message}. Clic para quitar.`;
-    pill.addEventListener("click", () => {
-      nounPhrases = nounPhrases.filter((item) => item.id !== phrase.id);
-      renderSentence();
-      renderAnswers();
-      renderGoals();
-      showFeedback("Frase nominal quitada.", "warning");
-    });
+
+    const text = document.createElement("span");
+    text.textContent = phrase.text;
+    pill.appendChild(text);
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "remove-pill-button";
+    removeButton.textContent = "x";
+    removeButton.title = validation.valid ? "Quitar frase nominal" : `${validation.message}. Quitar frase nominal.`;
+    removeButton.addEventListener("click", () => removeNounPhrase(phrase.id));
+    pill.appendChild(removeButton);
+
     list.appendChild(pill);
   });
 
@@ -234,6 +247,8 @@ function applyCategory(categoryId) {
     return;
   }
 
+  saveHistory();
+
   words.forEach((word) => {
     if (selectedIds.has(word.id) && word.cleanText !== "") {
       word.category = categoryId;
@@ -242,10 +257,7 @@ function applyCategory(categoryId) {
 
   selectedIds.clear();
   showFeedback("", "");
-  renderSentence();
-  renderAnswers();
-  renderGoals();
-  updateSelectedWords();
+  renderAll();
 }
 
 function addNounPhrase() {
@@ -263,20 +275,36 @@ function addNounPhrase() {
   const alreadyExists = nounPhrases.some((phrase) => phrase.key === key);
 
   if (!alreadyExists) {
+    saveHistory();
     nounPhrases.push({
       id: Date.now(),
       key,
       text: formatPhrase(selectedWords),
       wordIds,
     });
+  } else {
+    showFeedback("Esa frase nominal ya estaba guardada.", "warning");
   }
 
   selectedIds.clear();
-  showFeedback("", "");
-  renderSentence();
-  renderAnswers();
-  renderGoals();
-  updateSelectedWords();
+  if (!alreadyExists) {
+    showFeedback("", "");
+  }
+  renderAll();
+}
+
+function removeNounPhrase(phraseId) {
+  const phraseExists = nounPhrases.some((phrase) => phrase.id === phraseId);
+
+  if (!phraseExists) {
+    return;
+  }
+
+  saveHistory();
+  nounPhrases = nounPhrases.filter((phrase) => phrase.id !== phraseId);
+  selectedIds.clear();
+  showFeedback("Frase nominal quitada.", "warning");
+  renderAll();
 }
 
 function checkAnswers() {
@@ -322,16 +350,14 @@ function checkAnswers() {
 }
 
 function resetExercise() {
+  saveHistory();
   selectedIds.clear();
   nounPhrases = [];
   words.forEach((word) => {
     word.category = null;
   });
   showFeedback("", "");
-  renderSentence();
-  renderAnswers();
-  renderGoals();
-  updateSelectedWords();
+  renderAll();
 }
 
 function buildExercise() {
@@ -347,11 +373,9 @@ function buildExercise() {
   exerciseTargets = analyzeExercise(words);
   selectedIds.clear();
   nounPhrases = [];
+  historyStack = [];
   showFeedback("Nuevo ejercicio creado.", "success");
-  renderSentence();
-  renderAnswers();
-  renderGoals();
-  updateSelectedWords();
+  renderAll();
 }
 
 function createWords(text) {
@@ -519,6 +543,43 @@ function validateNounPhrase(phrase) {
   return { valid: true, message: "frase nominal valida" };
 }
 
+function saveHistory() {
+  historyStack.push({
+    words: words.map((word) => ({ ...word })),
+    nounPhrases: nounPhrases.map((phrase) => ({
+      ...phrase,
+      wordIds: [...phrase.wordIds],
+    })),
+  });
+
+  if (historyStack.length > 30) {
+    historyStack.shift();
+  }
+
+  updateUndoButton();
+}
+
+function undoLastAction() {
+  const previousState = historyStack.pop();
+
+  if (!previousState) {
+    return;
+  }
+
+  words = previousState.words.map((word) => ({ ...word }));
+  nounPhrases = previousState.nounPhrases.map((phrase) => ({
+    ...phrase,
+    wordIds: [...phrase.wordIds],
+  }));
+  selectedIds.clear();
+  showFeedback("Ultima accion deshecha.", "warning");
+  renderAll();
+}
+
+function updateUndoButton() {
+  undoButton.disabled = historyStack.length === 0;
+}
+
 const articles = new Set(["a", "an", "the"]);
 const prepositions = new Set([
   "about", "above", "across", "after", "against", "along", "among", "around", "at",
@@ -567,6 +628,7 @@ document.addEventListener("pointerup", () => {
 checkButton.addEventListener("click", checkAnswers);
 resetButton.addEventListener("click", resetExercise);
 buildButton.addEventListener("click", buildExercise);
+undoButton.addEventListener("click", undoLastAction);
 sentenceInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
     buildExercise();
@@ -578,3 +640,4 @@ renderSentence();
 renderCategories();
 renderAnswers();
 renderGoals();
+updateUndoButton();

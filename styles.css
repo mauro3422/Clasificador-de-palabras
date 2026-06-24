@@ -65,6 +65,13 @@ button {
   padding: 22px;
 }
 
+.topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--accent-dark);
@@ -255,6 +262,11 @@ textarea:focus {
   font-weight: 700;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .category-button {
   display: flex;
   align-items: center;
@@ -344,6 +356,9 @@ textarea:focus {
 }
 
 .tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 8px;
   border-radius: 999px;
   background: var(--surface-soft);
@@ -353,12 +368,34 @@ textarea:focus {
 
 .tag-pill.removable {
   border: 1px solid var(--line);
-  cursor: pointer;
 }
 
 .tag-pill.removable:hover,
 .tag-pill.removable:focus-visible {
   border-color: #ec4899;
+  outline: none;
+}
+
+.remove-pill-button {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.remove-pill-button:hover,
+.remove-pill-button:focus-visible {
+  border-color: var(--error);
+  color: #fecdd3;
   outline: none;
 }
 
@@ -402,6 +439,14 @@ textarea:focus {
   .section-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .topbar-actions {
+    justify-content: stretch;
+  }
+
+  .topbar-actions button {
+    flex: 1;
   }
 
   .topbar,
