@@ -76,8 +76,7 @@ function renderSentence() {
 
     wordButton.addEventListener("pointerenter", () => {
       if (isDragging) {
-        selectedIds.add(word.id);
-        updateSelectedWords();
+        addSelection(word.id);
       }
     });
 
@@ -212,12 +211,24 @@ function renderPhraseList(card) {
 }
 
 function toggleSelection(id) {
+  saveHistory();
+
   if (selectedIds.has(id)) {
     selectedIds.delete(id);
   } else {
     selectedIds.add(id);
   }
 
+  updateSelectedWords();
+}
+
+function addSelection(id) {
+  if (selectedIds.has(id)) {
+    return;
+  }
+
+  saveHistory();
+  selectedIds.add(id);
   updateSelectedWords();
 }
 
@@ -550,6 +561,7 @@ function saveHistory() {
       ...phrase,
       wordIds: [...phrase.wordIds],
     })),
+    selectedIds: [...selectedIds],
   });
 
   if (historyStack.length > 30) {
@@ -571,7 +583,7 @@ function undoLastAction() {
     ...phrase,
     wordIds: [...phrase.wordIds],
   }));
-  selectedIds.clear();
+  selectedIds = new Set(previousState.selectedIds || []);
   showFeedback("Ultima accion deshecha.", "warning");
   renderAll();
 }

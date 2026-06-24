@@ -72,6 +72,13 @@ button {
   justify-content: flex-end;
 }
 
+.exercise-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--accent-dark);
@@ -436,6 +443,7 @@ button:disabled {
   }
 
   .topbar,
+  .exercise-heading,
   .section-heading {
     align-items: stretch;
     flex-direction: column;
