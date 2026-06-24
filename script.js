@@ -526,6 +526,10 @@ function refineAmbiguousCategories(sourceWords, terms, guessedCategories) {
       refinedCategories[index] = "adjective";
     }
 
+    if (refinedCategories[index] === "noun" && nextCategory === "noun" && looksLikeAdjective(word.cleanText)) {
+      refinedCategories[index] = "adjective";
+    }
+
     if (refinedCategories[index] === "verb" && isPluralNounCandidate(term, refinedCategories[index])) {
       const previousCategory = refinedCategories[index - 1];
       const previousWord = sourceWords[index - 1];
@@ -539,6 +543,10 @@ function refineAmbiguousCategories(sourceWords, terms, guessedCategories) {
         refinedCategories[index] = "noun";
       }
     }
+
+    if (refinedCategories[index] === "verb" && nextCategory !== "noun" && previousCategoryIsAdjective(refinedCategories[index - 1]) && looksPlural(word.cleanText)) {
+      refinedCategories[index] = "noun";
+    }
   });
 
   return refinedCategories;
@@ -550,6 +558,18 @@ function hasSwitch(term, value) {
 
 function isPluralNounCandidate(term, category) {
   return category === "verb" && hasSwitch(term, "Plural|Verb");
+}
+
+function previousCategoryIsAdjective(category) {
+  return category === "adjective";
+}
+
+function looksPlural(text) {
+  return /^[a-z]+s$/i.test(text) && !/ss$/i.test(text);
+}
+
+function looksLikeAdjective(text) {
+  return /(al|able|ible|ful|ic|ical|ive|less|ous)$/i.test(text);
 }
 
 function findNounPhraseRanges(sourceWords, guessedCategories) {
