@@ -49,6 +49,7 @@ button {
 .builder-panel,
 .exercise-panel,
 .category-panel,
+.goal-panel,
 .answers-panel {
   background: rgba(23, 32, 51, 0.92);
   border: 1px solid rgba(51, 65, 85, 0.92);
@@ -95,6 +96,7 @@ h2 {
 .exercise-panel,
 .builder-panel,
 .category-panel,
+.goal-panel,
 .answers-panel {
   padding: 22px;
 }
@@ -190,10 +192,57 @@ textarea:focus {
 }
 
 .category-grid,
+.goal-grid,
 .answers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
+}
+
+.compact-heading {
+  margin-bottom: 12px;
+}
+
+.compact-heading p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.goal-card {
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.goal-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+
+.goal-card h3::before {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--category-color);
+  content: "";
+}
+
+.goal-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.goal-card.complete {
+  border-color: rgba(74, 222, 128, 0.7);
+  background: rgba(74, 222, 128, 0.08);
 }
 
 .category-button,
@@ -359,6 +408,7 @@ textarea:focus {
   .builder-panel,
   .exercise-panel,
   .category-panel,
+  .goal-panel,
   .answers-panel {
     padding: 16px;
   }
