@@ -313,6 +313,17 @@ textarea:focus {
   outline: none;
 }
 
+.tag-pill.invalid {
+  border-color: var(--error);
+  background: rgba(251, 113, 133, 0.14);
+  color: #fecdd3;
+}
+
+.tag-pill.invalid:hover,
+.tag-pill.invalid:focus-visible {
+  border-color: var(--error);
+}
+
 .feedback {
   min-height: 28px;
   margin-top: 14px;

@@ -153,9 +153,10 @@ function renderPhraseList(card) {
   nounPhrases.forEach((phrase) => {
     const pill = document.createElement("button");
     pill.type = "button";
-    pill.className = "tag-pill removable";
+    const validation = validateNounPhrase(phrase);
+    pill.className = validation.valid ? "tag-pill removable" : "tag-pill removable invalid";
     pill.textContent = phrase.text;
-    pill.title = "Quitar frase nominal";
+    pill.title = validation.valid ? "Quitar frase nominal" : `${validation.message}. Clic para quitar.`;
     pill.addEventListener("click", () => {
       nounPhrases = nounPhrases.filter((item) => item.id !== phrase.id);
       renderSentence();
@@ -251,11 +252,17 @@ function checkAnswers() {
   const classifiableWords = words.filter((word) => word.cleanText);
   const pendingWords = classifiableWords.filter((word) => !word.category);
   const missingNounPhrase = nounPhrases.length === 0;
+  const invalidNounPhrases = nounPhrases
+    .map((phrase) => ({
+      phrase,
+      validation: validateNounPhrase(phrase),
+    }))
+    .filter((item) => !item.validation.valid);
 
   if (classifiableWords.length === 0) {
     showFeedback("Primero crea un ejercicio con una oracion.", "warning");
-  } else if (pendingWords.length === 0 && !missingNounPhrase) {
-    showFeedback("Listo: todas las palabras tienen una etiqueta y marcaste frases nominales.", "success");
+  } else if (pendingWords.length === 0 && !missingNounPhrase && invalidNounPhrases.length === 0) {
+    showFeedback("Listo: todas las palabras tienen una etiqueta y las frases nominales son validas.", "success");
   } else {
     const messages = [];
 
@@ -265,6 +272,14 @@ function checkAnswers() {
 
     if (missingNounPhrase) {
       messages.push("falta marcar al menos una frase nominal");
+    }
+
+    if (invalidNounPhrases.length > 0) {
+      messages.push(
+        `revisa frases nominales: ${invalidNounPhrases
+          .map((item) => `${item.phrase.text} (${item.validation.message})`)
+          .join(", ")}`
+      );
     }
 
     showFeedback(`${messages.join("; ")}.`, "warning");
@@ -324,6 +339,37 @@ function formatPhrase(phraseWords) {
 
     return `${phrase} ${word.text}`;
   }, "");
+}
+
+function validateNounPhrase(phrase) {
+  const phraseWords = phrase.wordIds
+    .map((id) => words.find((word) => word.id === id))
+    .filter((word) => word && word.cleanText);
+  const allowedCategories = new Set(["article", "adjective", "noun"]);
+  const hasUntaggedWord = phraseWords.some((word) => !word.category);
+  const hasNoun = phraseWords.some((word) => word.category === "noun");
+  const invalidWords = phraseWords.filter((word) => word.category && !allowedCategories.has(word.category));
+
+  if (phraseWords.length === 0) {
+    return { valid: false, message: "no contiene palabras" };
+  }
+
+  if (hasUntaggedWord) {
+    return { valid: false, message: "primero etiqueta sus palabras" };
+  }
+
+  if (invalidWords.length > 0) {
+    return {
+      valid: false,
+      message: `incluye ${invalidWords.map((word) => word.cleanText).join(", ")}`
+    };
+  }
+
+  if (!hasNoun) {
+    return { valid: false, message: "no contiene sustantivo" };
+  }
+
+  return { valid: true, message: "frase nominal valida" };
 }
 
 function showFeedback(message, type) {
