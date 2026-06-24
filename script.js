@@ -514,7 +514,10 @@ function findNounPhraseRanges(sourceWords, guessedCategories) {
     ranges.push([start, guessedCategories.length - 1]);
   }
 
-  return ranges.filter(([from, to]) => sourceWords.slice(from, to + 1).some((word) => word.cleanText));
+  return ranges.filter(([from, to]) => {
+    const phraseWords = sourceWords.slice(from, to + 1).filter((word) => word.cleanText);
+    return phraseWords.length > 1;
+  });
 }
 
 function validateNounPhrase(phrase) {
@@ -530,6 +533,10 @@ function validateNounPhrase(phrase) {
 
   if (phraseWords.length === 0) {
     return { valid: false, message: "no contiene palabras" };
+  }
+
+  if (phraseWords.length === 1) {
+    return { valid: false, message: "debe tener mas de una palabra" };
   }
 
   if (!isContinuous) {
@@ -610,7 +617,7 @@ const verbs = new Set([
   "find", "fix", "get", "give", "go", "help", "learn", "make", "open", "play",
   "read", "reads", "run", "say", "see", "select", "solve", "solves", "speak",
   "start", "study", "take", "teach", "test", "tests", "try", "use", "uses", "walk",
-  "work", "write"
+  "work", "works", "write"
 ]);
 const adverbs = new Set([
   "always", "carefully", "never", "often", "quickly", "quietly", "rarely", "slowly",
@@ -621,9 +628,9 @@ const adjectives = new Set([
   "important", "interesting", "modern", "new", "old", "small", "technical", "young"
 ]);
 const nouns = new Set([
-  "application", "applications", "book", "class", "company", "exercise", "language",
-  "problem", "problems", "programmer", "school", "software", "student", "system",
-  "team", "tool", "tools", "word", "words"
+  "application", "applications", "book", "class", "company", "developer", "exercise",
+  "language", "passion", "problem", "problems", "programmer", "project", "projects",
+  "school", "software", "student", "system", "team", "tool", "tools", "word", "words"
 ]);
 const adjectiveEndings = ["able", "al", "ful", "ic", "ive", "less", "ous"];
 
